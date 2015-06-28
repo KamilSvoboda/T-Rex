@@ -1,9 +1,12 @@
 package biz.svoboda.trex;
 
+import android.content.Intent;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
+import android.widget.EditText;
 
 
 public class MainScreen extends ActionBarActivity {
@@ -34,5 +37,10 @@ public class MainScreen extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    public void startSending(View view) {
+        EditText editText = (EditText) findViewById(R.id.edit_message);
+        String message = editText.getText().toString();
     }
 }
