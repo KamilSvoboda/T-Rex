@@ -1,11 +1,10 @@
 <resources>
     <string name="app_name">T-Rex</string>
 
-    <string name="hello_world">Nazdááárek!</string>
     <string name="action_settings">Nastavení</string>
     <string name="button_start_sending">Start</string>
     <string name="insert_target_url">Vložte URL</string>
-    <string name="pref_target_category">Cílový servr</string>
+    <string name="pref_target_category">Cílový server</string>
     <string name="pref_targetUrl">URL adresa</string>
     <string name="pref_targetUrl_summ">Vložte URL adresu cílového serveru</string>
     <string name="pref_targetUrl_def_value">http://kamil.svobodovi.net/track.php</string>

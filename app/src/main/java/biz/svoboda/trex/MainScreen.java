@@ -1,20 +1,37 @@
 package biz.svoboda.trex;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.location.Location;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
+import android.widget.Button;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 
-public class MainScreen extends ActionBarActivity {
+public class MainScreen extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+
+    private GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_screen);
+        buildGoogleApiClient();
+    }
+
+    protected synchronized void buildGoogleApiClient() {
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
     }
 
     @Override
@@ -33,6 +50,8 @@ public class MainScreen extends ActionBarActivity {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent intent = new Intent(this, Settings.class);
+            startActivity(intent);
             return true;
         }
 
@@ -40,7 +59,32 @@ public class MainScreen extends ActionBarActivity {
     }
 
     public void startSending(View view) {
-        EditText editText = (EditText) findViewById(R.id.edit_message);
-        String message = editText.getText().toString();
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        String targetURL = sharedPref.getString("pref_targetUrl", "");
+        mGoogleApiClient.connect();
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                mGoogleApiClient);
+        if (mLastLocation != null) {
+            String lat = String.valueOf(mLastLocation.getLatitude());
+            String lon = String.valueOf(mLastLocation.getLongitude());
+
+            Button buttonStart = (Button) findViewById(R.id.button_start);
+            buttonStart.setText(lat);
+        }
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult connectionResult) {
+
     }
 }

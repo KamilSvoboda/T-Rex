@@ -7,6 +7,7 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
+        <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
         <activity
             android:name=".MainScreen"
             android:label="@string/app_name" >
@@ -15,6 +16,14 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+        </activity>
+        <activity
+            android:name=".Settings"
+            android:label="@string/action_settings"
+            android:parentActivityName=".MainScreen" >
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="biz.svoboda.trex.MainScreen" />
         </activity>
     </application>
 
