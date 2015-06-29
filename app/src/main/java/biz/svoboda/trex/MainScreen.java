@@ -73,7 +73,7 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
             String lon = String.valueOf(mLastLocation.getLongitude());
 
             Button buttonStart = (Button) findViewById(R.id.button_start);
-            buttonStart.setText(lat);
+            buttonStart.setText(lat + " " + lon);
         }
 
     }
