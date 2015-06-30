@@ -3,7 +3,23 @@
     <PreferenceCategory android:key="pref_target_category" android:title="@string/pref_target_category">
         <EditTextPreference android:key="pref_targetUrl"
             android:title="@string/pref_targetUrl"
+            android:inputType="textUri"
             android:summary="@string/pref_targetUrl_summ"
             android:defaultValue="@string/pref_targetUrl_def_value"/>
+    </PreferenceCategory>
+    <PreferenceCategory android:key="pref_location_category" android:title="@string/pref_location_category">
+        <EditTextPreference
+            android:defaultValue="30"
+            android:key="pref_frequency"
+            android:title="@string/pref_frequency"
+            android:summary="@string/pref_frequency_summ"
+            android:inputType="number"/>
+        <ListPreference
+            android:key="pref_strategy"
+            android:entries="@array/strategyListOptions"
+            android:entryValues="@array/strategyListValues"
+            android:defaultValue="PRIORITY_BALANCED_POWER_ACCURACY"
+            android:summary="@string/pref_strategy_sum"
+            android:title="@string/pref_strategy" />
     </PreferenceCategory>
 </PreferenceScreen>

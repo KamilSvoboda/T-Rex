@@ -102,13 +102,32 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
         processLocation(LocationServices.FusedLocationApi.getLastLocation(
                 mGoogleApiClient));
 
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        Integer freq = Integer.valueOf(sharedPref.getString("pref_frequency","30"));
+
         /*
         Inicializace pravidelného získávání polohy
          */
         LocationRequest mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(1000);
+        mLocationRequest.setInterval(freq * 1000);
         mLocationRequest.setFastestInterval(1000);
-        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+
+        String listPrefs = sharedPref.getString("pref_strategy", "PRIORITY_BALANCED_POWER_ACCURACY");
+        switch (listPrefs)
+        {
+            case "PRIORITY_HIGH_ACCURACY":
+                mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
+                break;
+            case "PRIORITY_LOW_POWER":
+                mLocationRequest.setPriority(LocationRequest.PRIORITY_LOW_POWER);
+                break;
+            case "PRIORITY_NO_POWER":
+                mLocationRequest.setPriority(LocationRequest.PRIORITY_NO_POWER);
+                break;
+            default:
+                mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+                break;
+        }
 
         LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }

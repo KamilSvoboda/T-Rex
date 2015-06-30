@@ -13,4 +13,9 @@
     <string name="textview_date">Date:</string>
     <string name="textview_lat">Latitude:</string>
     <string name="textview_lon">Longitude:</string>
+    <string name="pref_location_category">Localization settings</string>
+    <string name="pref_frequency">Frequency (sec)</string>
+    <string name="pref_frequency_summ">Insert frequency of localization in seconds</string>
+    <string name="pref_strategy">Localization strategy</string>
+    <string name="pref_strategy_sum">Accuracy and localization strategy</string>
 </resources>
