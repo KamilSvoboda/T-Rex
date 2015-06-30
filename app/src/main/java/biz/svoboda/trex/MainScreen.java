@@ -3,6 +3,8 @@ package biz.svoboda.trex;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.net.http.AndroidHttpClient;
+import android.os.AsyncTask;
 import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
@@ -17,8 +19,25 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.LocationListener;
 
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 public class MainScreen extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
@@ -114,6 +133,9 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
             TextView lonText = (TextView) findViewById(R.id.text_position_lon);
             lonText.setText(getResources().getString(R.string.textview_lon));
 
+            TextView respText = (TextView) findViewById(R.id.text_http_response);
+            respText.setText(null);
+
             mGoogleApiClient.disconnect();
         }
     }
@@ -171,7 +193,8 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
     {
         if (location != null) {
             mCurrentLocation = location;
-            String mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+            //2014-06-28T15:07:59
+            String mLastUpdateTime =  new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date());
             String lat = String.valueOf(mCurrentLocation.getLatitude());
             String lon = String.valueOf(mCurrentLocation.getLongitude());
 
@@ -190,6 +213,7 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
             String targetURL = sharedPref.getString("pref_targetUrl", "");
 
+            new NetworkTask().execute(targetURL, mLastUpdateTime, lat, lon);
         }
     }
 
@@ -210,4 +234,54 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
 
     }
 
+    /**
+     * Privátní třída, která asynchronně posílá POST data na URL
+     */
+    private class NetworkTask extends AsyncTask<String, Void, HttpResponse> {
+        @Override
+        protected HttpResponse doInBackground(String... params) {
+            String targetURL = params[0];
+            HttpPost httppost = new HttpPost(targetURL);
+            AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
+
+            try {
+                // Add data
+                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(3);
+                nameValuePairs.add(new BasicNameValuePair("time", params[1]));
+                nameValuePairs.add(new BasicNameValuePair("lat", params[2]));
+                nameValuePairs.add(new BasicNameValuePair("lon", params[3]));
+                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+
+                return client.execute(httppost);
+
+            } catch (IOException e) {
+                e.printStackTrace();
+                return null;
+            } finally {
+                client.close();
+            }
+        }
+
+        /**
+         * Zpracování odpovědi
+         * @param result
+         */
+        @Override
+        protected void onPostExecute(HttpResponse result) {
+            // Convert the response into a String
+            HttpEntity resEntity = result.getEntity();
+            // Write the response to a textview
+            if (resEntity != null) {
+                String data = null;
+                try {
+                    data = EntityUtils.toString(resEntity);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                TextView httpRespText = (TextView) findViewById(R.id.text_http_response);
+                httpRespText.setText(data);
+            }
+        }
+    }
 }
+
