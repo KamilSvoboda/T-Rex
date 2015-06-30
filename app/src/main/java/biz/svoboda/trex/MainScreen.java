@@ -1,10 +1,12 @@
 package biz.svoboda.trex;
 
+import android.app.IntentService;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.location.Location;
+import android.net.Uri;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.preference.PreferenceManager;
@@ -37,6 +39,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MainScreen extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+
+    /*TODO: https://gist.github.com/blackcj/20efe2ac885c7297a676 */
 
     /*
     Klíč pro uložení stavu activity
