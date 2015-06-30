@@ -194,9 +194,12 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
         if (location != null) {
             mCurrentLocation = location;
             //2014-06-28T15:07:59
-            String mLastUpdateTime =  new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(new Date());
+            String mLastUpdateTime =  new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(mCurrentLocation.getTime());
             String lat = String.valueOf(mCurrentLocation.getLatitude());
             String lon = String.valueOf(mCurrentLocation.getLongitude());
+            String alt = String.valueOf(mCurrentLocation.getAltitude());
+            String speed = String.valueOf(mCurrentLocation.getSpeed());
+            String bearing = String.valueOf(mCurrentLocation.getBearing());
 
             TextView dateText = (TextView) findViewById(R.id.text_position_date);
             dateText.setText(getResources().getString(R.string.textview_date) + mLastUpdateTime);
@@ -207,13 +210,22 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
             TextView lonText = (TextView) findViewById(R.id.text_position_lon);
             lonText.setText(getResources().getString(R.string.textview_lon) + lon);
 
+            TextView altText = (TextView) findViewById(R.id.text_position_alt);
+            altText.setText(getResources().getString(R.string.textview_alt) + alt);
+
+            TextView speedText = (TextView) findViewById(R.id.text_position_speed);
+            speedText.setText(getResources().getString(R.string.textview_speed) + speed);
+
+            TextView speedBearing = (TextView) findViewById(R.id.text_position_bearing);
+            speedBearing.setText(getResources().getString(R.string.textview_bearing) + bearing);
+
             /*
             Odeslani na server
              */
             SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
             String targetURL = sharedPref.getString("pref_targetUrl", "");
 
-            new NetworkTask().execute(targetURL, mLastUpdateTime, lat, lon);
+            new NetworkTask().execute(targetURL, mLastUpdateTime, lat, lon, alt, speed, bearing);
         }
     }
 
@@ -246,10 +258,13 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
 
             try {
                 // Add data
-                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(3);
+                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(6);
                 nameValuePairs.add(new BasicNameValuePair("time", params[1]));
                 nameValuePairs.add(new BasicNameValuePair("lat", params[2]));
                 nameValuePairs.add(new BasicNameValuePair("lon", params[3]));
+                nameValuePairs.add(new BasicNameValuePair("alt", params[4]));
+                nameValuePairs.add(new BasicNameValuePair("speed", params[5]));
+                nameValuePairs.add(new BasicNameValuePair("bearing", params[6]));
                 httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
 
                 return client.execute(httppost);
