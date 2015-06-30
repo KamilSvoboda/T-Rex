@@ -9,4 +9,8 @@
     <string name="pref_targetUrl">Server URL</string>
     <string name="pref_targetUrl_summ">Insert URL of target server</string>
     <string name="pref_targetUrl_def_value">http://kamil.svobodovi.net/track.php</string>
+    <string name="button_stop_sending">Stop</string>
+    <string name="textview_date">Date:</string>
+    <string name="textview_lat">Latitude:</string>
+    <string name="textview_lon">Longitude:</string>
 </resources>

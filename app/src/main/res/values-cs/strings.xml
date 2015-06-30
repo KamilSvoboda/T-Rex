@@ -3,9 +3,13 @@
 
     <string name="action_settings">Nastavení</string>
     <string name="button_start_sending">Start</string>
+    <string name="button_stop_sending">Stop</string>
     <string name="insert_target_url">Vložte URL</string>
     <string name="pref_target_category">Cílový server</string>
     <string name="pref_targetUrl">URL adresa</string>
     <string name="pref_targetUrl_summ">Vložte URL adresu cílového serveru</string>
     <string name="pref_targetUrl_def_value">http://kamil.svobodovi.net/track.php</string>
+    <string name="textview_date">Datum:</string>
+    <string name="textview_lat">Latitude:</string>
+    <string name="textview_lon">Longitude:</string>
 </resources>
