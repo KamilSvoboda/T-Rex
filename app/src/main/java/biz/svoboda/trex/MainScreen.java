@@ -9,24 +9,27 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
+import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.LocationListener;
 
-public class MainScreen extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+import java.text.DateFormat;
+import java.util.Date;
+
+public class MainScreen extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
     private GoogleApiClient mGoogleApiClient;
+    private Location mCurrentLocation;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_screen);
-        buildGoogleApiClient();
-    }
 
-    protected synchronized void buildGoogleApiClient() {
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
@@ -58,24 +61,56 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
         return super.onOptionsItemSelected(item);
     }
 
+    /**
+     * Kliknutí na tlačítko spuštění odesílání
+     *
+     * @param view
+     */
     public void startSending(View view) {
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        String targetURL = sharedPref.getString("pref_targetUrl", "");
         mGoogleApiClient.connect();
     }
 
+    /**
+     * Kliknutí na tlačítko vypnutí odesílání
+     * @param view
+     */
+    public void stopSending(View view) {
+        if (mGoogleApiClient.isConnected())
+        {
+            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+
+            TextView dateText = (TextView) findViewById(R.id.text_position_date);
+            dateText.setText(getResources().getString(R.string.textview_date));
+
+            TextView latText = (TextView) findViewById(R.id.text_position_lat);
+            latText.setText(getResources().getString(R.string.textview_lat));
+
+            TextView lonText = (TextView) findViewById(R.id.text_position_lon);
+            lonText.setText(getResources().getString(R.string.textview_lon));
+
+            mGoogleApiClient.disconnect();
+        }
+    }
+
+    /**
+     * Callback metoda po připojení ke službám polohy
+     *
+     * @param bundle
+     */
     @Override
     public void onConnected(Bundle bundle) {
-        Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                mGoogleApiClient);
-        if (mLastLocation != null) {
-            String lat = String.valueOf(mLastLocation.getLatitude());
-            String lon = String.valueOf(mLastLocation.getLongitude());
+        processLocation(LocationServices.FusedLocationApi.getLastLocation(
+                mGoogleApiClient));
 
-            Button buttonStart = (Button) findViewById(R.id.button_start);
-            buttonStart.setText(lat + " " + lon);
-        }
+        /*
+        Inicializace pravidelného získávání polohy
+         */
+        LocationRequest mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(1000);
+        mLocationRequest.setFastestInterval(1000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
 
+        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
     }
 
     @Override
@@ -83,8 +118,51 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
 
     }
 
+    /**
+     * Zpracuje novou pozici
+     * @param location
+     */
+    private void processLocation(Location location)
+    {
+        if (location != null) {
+            mCurrentLocation = location;
+            String mLastUpdateTime = DateFormat.getTimeInstance().format(new Date());
+            String lat = String.valueOf(mCurrentLocation.getLatitude());
+            String lon = String.valueOf(mCurrentLocation.getLongitude());
+
+            TextView dateText = (TextView) findViewById(R.id.text_position_date);
+            dateText.setText(getResources().getString(R.string.textview_date) + mLastUpdateTime);
+
+            TextView latText = (TextView) findViewById(R.id.text_position_lat);
+            latText.setText(getResources().getString(R.string.textview_lat) + lat);
+
+            TextView lonText = (TextView) findViewById(R.id.text_position_lon);
+            lonText.setText(getResources().getString(R.string.textview_lon) + lon);
+
+            /*
+            Odeslani na server
+             */
+            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+            String targetURL = sharedPref.getString("pref_targetUrl", "");
+
+        }
+    }
+
+    /**
+     * Called when the location has changed.
+     * <p/>
+     * <p> There are no restrictions on the use of the supplied Location object.
+     *
+     * @param location The new location, as a Location object.
+     */
+    @Override
+    public void onLocationChanged(Location location) {
+        processLocation(location);
+    }
+
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
 
     }
+
 }
