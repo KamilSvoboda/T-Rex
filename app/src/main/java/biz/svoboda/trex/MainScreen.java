@@ -22,6 +22,11 @@ import java.util.Date;
 
 public class MainScreen extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
 
+    /*
+    Klíč pro uložení stavu activity
+     */
+    private static final String LOCALIZATION_RUNNING_KEY = "LOCALIZATION_RUNNING";
+
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
 
@@ -35,6 +40,17 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
+        /*
+        Pokud existuje nějaký předchozí stav (např. po otočení obrazovky)
+         */
+        if (savedInstanceState != null) {
+            if (savedInstanceState.keySet().contains(LOCALIZATION_RUNNING_KEY)) {
+                if (savedInstanceState.getBoolean(LOCALIZATION_RUNNING_KEY)) //pokud predtim bezela lokalizace
+                {
+                    mGoogleApiClient.connect();
+                }
+            }
+        }
     }
 
     @Override
@@ -59,6 +75,16 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    /**
+     * Uložení stavu aplikace, při otočení obrazovky, apod.
+     * @see "https://developer.android.com/training/location/receive-location-updates.html#connect"
+     * @param savedInstanceState
+     */
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        savedInstanceState.putBoolean(LOCALIZATION_RUNNING_KEY, mGoogleApiClient.isConnected());
+        super.onSaveInstanceState(savedInstanceState);
     }
 
     /**
