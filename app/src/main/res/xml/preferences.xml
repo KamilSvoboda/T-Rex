@@ -22,4 +22,16 @@
             android:summary="@string/pref_strategy_sum"
             android:title="@string/pref_strategy" />
     </PreferenceCategory>
+    <PreferenceCategory android:key="pref_device_category" android:title="@string/pref_device">
+        <CheckBoxPreference
+            android:key="pref_screen_on"
+            android:title="@string/pref_keep_screen_on"
+            android:summary="@string/pref_keep_screen_on_summ"
+            android:defaultValue="false"/>
+        <CheckBoxPreference
+            android:key="pref_cpu_on"
+            android:title="@string/pref_keep_cpu_on"
+            android:summary="@string/pref_keep_cpu_on_summ"
+            android:defaultValue="true"/>
+    </PreferenceCategory>
 </PreferenceScreen>

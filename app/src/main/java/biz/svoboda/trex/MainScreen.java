@@ -9,6 +9,7 @@ import android.location.Location;
 import android.net.Uri;
 import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
+import android.os.PowerManager;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NotificationCompat;
@@ -17,6 +18,7 @@ import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
 import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -49,6 +51,11 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
 
     private GoogleApiClient mGoogleApiClient;
     private Location mCurrentLocation;
+
+    private Boolean mKeepScreenOn = false;
+    private Boolean mKeepCpuOn = true;
+
+    private PowerManager.WakeLock mWakeLock;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,6 +122,20 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
     public void startSending(View view) {
         if (!mGoogleApiClient.isConnected())
             mGoogleApiClient.connect();
+
+        //Check screen on/off settings
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        mKeepScreenOn = sharedPref.getBoolean("pref_screen_on", false);
+        mKeepCpuOn = sharedPref.getBoolean("pref_cpu_on", true);
+        if (mKeepScreenOn)
+            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        if (mKeepCpuOn)
+        {
+            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+            mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                    "TRexWakelockTag");
+            mWakeLock.acquire();
+        }
     }
 
     /**
@@ -139,6 +160,13 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
             respText.setText(null);
 
             mGoogleApiClient.disconnect();
+            //remove flag, if any
+            getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            if (mWakeLock != null)
+            {
+                mWakeLock.release();
+                mWakeLock = null;
+            }
         }
     }
 
