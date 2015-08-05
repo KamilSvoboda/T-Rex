@@ -1,56 +1,35 @@
 package biz.svoboda.trex;
 
-import android.app.IntentService;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
+import android.app.ActivityManager;
+import android.content.BroadcastReceiver;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.location.Location;
-import android.net.Uri;
-import android.net.http.AndroidHttpClient;
-import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.Handler;
 import android.os.PowerManager;
 import android.preference.PreferenceManager;
-import android.support.annotation.Nullable;
-import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationRequest;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.location.LocationListener;
-
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-
-import java.io.IOException;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 
-public class MainScreen extends ActionBarActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener, LocationListener {
+public class MainScreen extends ActionBarActivity {
 
     /*TODO: https://gist.github.com/blackcj/20efe2ac885c7297a676 */
-
-    /*
-    Klíč pro uložení stavu activity
-     */
-    private static final String LOCALIZATION_RUNNING_KEY = "LOCALIZATION_RUNNING";
-
-    private GoogleApiClient mGoogleApiClient;
-    private Location mCurrentLocation;
+    private static final String TAG = "MainScreen";
 
     private Boolean mKeepScreenOn = false;
     private Boolean mKeepCpuOn = true;
@@ -62,22 +41,13 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_screen);
 
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-        /*
-        Pokud existuje nějaký předchozí stav (např. po otočení obrazovky)
-         */
-        if (savedInstanceState != null) {
-            if (savedInstanceState.keySet().contains(LOCALIZATION_RUNNING_KEY)) {
-                if (savedInstanceState.getBoolean(LOCALIZATION_RUNNING_KEY)) //pokud predtim bezela lokalizace
-                {
-                    mGoogleApiClient.connect();
-                }
-            }
-        }
+        //Registrace broadcastreceiveru komunikaci se sluzbou (musi byt tady, aby fungoval i po nove inicializaci aplikace z notifikace
+        // The filter's action is BROADCAST_ACTION
+        IntentFilter mIntentFilter = new IntentFilter(Constants.LOCATION_BROADCAST);
+        // Instantiates a new mPositionReceiver
+        NewPositionReceiver mPositionReceiver = new NewPositionReceiver();
+        // Registers the mPositionReceiver and its intent filters
+        LocalBroadcastManager.getInstance(this).registerReceiver(mPositionReceiver, mIntentFilter);
     }
 
     @Override
@@ -105,47 +75,52 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
     }
 
     /**
-     * Uložení stavu aplikace, při otočení obrazovky, apod.
-     * @see "https://developer.android.com/training/location/receive-location-updates.html#connect"
-     * @param savedInstanceState
-     */
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        savedInstanceState.putBoolean(LOCALIZATION_RUNNING_KEY, mGoogleApiClient.isConnected());
-        super.onSaveInstanceState(savedInstanceState);
-    }
-
-    /**
      * Kliknutí na tlačítko spuštění odesílání
      *
      * @param view
      */
     public void startSending(View view) {
-        if (!mGoogleApiClient.isConnected())
-            mGoogleApiClient.connect();
-
-        //Check screen on/off settings
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        mKeepScreenOn = sharedPref.getBoolean("pref_screen_on", false);
-        mKeepCpuOn = sharedPref.getBoolean("pref_cpu_on", true);
-        if (mKeepScreenOn)
-            getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        if (mKeepCpuOn)
+        if (!isServiceRunning(BackgroundLocationService.class))
         {
-            PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-            mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                    "TRexWakelockTag");
-            mWakeLock.acquire();
+            //Check screen on/off settings
+            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+            mKeepScreenOn = sharedPref.getBoolean("pref_screen_on", false);
+            mKeepCpuOn = sharedPref.getBoolean("pref_cpu_on", true);
+            if (mKeepScreenOn)
+                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            if (mKeepCpuOn) {
+                PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+                mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                        "TRexWakelockTag");
+                mWakeLock.acquire();
+            }
+
+            //Nastartovani sluzby
+            ComponentName comp = new ComponentName(getApplicationContext().getPackageName(), BackgroundLocationService.class.getName());
+            ComponentName service = getApplicationContext().startService(new Intent().setComponent(comp));
+
+            if (null == service) {
+                // something really wrong here
+                Toast.makeText(this, R.string.localiz_could_not_start, Toast.LENGTH_SHORT).show();
+                Log.e(TAG, "Could not start localization service " + comp.toString());
+            }
         }
+        else
+        {
+            Toast.makeText(this, R.string.localiz_run, Toast.LENGTH_SHORT).show();
+        }
+
     }
 
     /**
      * Kliknutí na tlačítko vypnutí odesílání
+     *
      * @param view
      */
     public void stopSending(View view) {
-        if (mGoogleApiClient.isConnected())
-        {
-            LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
+        if (isServiceRunning(BackgroundLocationService.class)) {
+            ComponentName comp = new ComponentName(getApplicationContext().getPackageName(), BackgroundLocationService.class.getName());
+            getApplicationContext().stopService(new Intent().setComponent(comp));
 
             TextView dateText = (TextView) findViewById(R.id.text_position_date);
             dateText.setText(getResources().getString(R.string.textview_date));
@@ -156,81 +131,55 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
             TextView lonText = (TextView) findViewById(R.id.text_position_lon);
             lonText.setText(getResources().getString(R.string.textview_lon));
 
+            TextView altText = (TextView) findViewById(R.id.text_position_alt);
+            altText.setText(getResources().getString(R.string.textview_alt));
+
+            TextView speedText = (TextView) findViewById(R.id.text_position_speed);
+            speedText.setText(getResources().getString(R.string.textview_speed));
+
+            TextView speedBearing = (TextView) findViewById(R.id.text_position_bearing);
+            speedBearing.setText(getResources().getString(R.string.textview_bearing));
+
             TextView respText = (TextView) findViewById(R.id.text_http_response);
             respText.setText(null);
 
-            mGoogleApiClient.disconnect();
             //remove flag, if any
             getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            if (mWakeLock != null)
-            {
+            if (mWakeLock != null) {
                 mWakeLock.release();
                 mWakeLock = null;
             }
         }
+        else
+            Toast.makeText(this, R.string.localiz_not_run, Toast.LENGTH_SHORT).show();
     }
 
     /**
-     * Callback metoda po připojení ke službám polohy
-     *
-     * @param bundle
+     * Check service is running
+     * http://stackoverflow.com/questions/600207/how-to-check-if-a-service-is-running-on-android
+     * @param serviceClass
+     * @return
      */
-    @Override
-    public void onConnected(Bundle bundle) {
-        processLocation(LocationServices.FusedLocationApi.getLastLocation(
-                mGoogleApiClient));
-
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        Integer freq = Integer.valueOf(sharedPref.getString("pref_frequency","30"));
-
-        /*
-        Inicializace pravidelného získávání polohy
-         */
-        LocationRequest mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(freq * 1000);
-        mLocationRequest.setFastestInterval(1000);
-
-        String listPrefs = sharedPref.getString("pref_strategy", "PRIORITY_BALANCED_POWER_ACCURACY");
-        switch (listPrefs)
-        {
-            case "PRIORITY_HIGH_ACCURACY":
-                mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
-                break;
-            case "PRIORITY_LOW_POWER":
-                mLocationRequest.setPriority(LocationRequest.PRIORITY_LOW_POWER);
-                break;
-            case "PRIORITY_NO_POWER":
-                mLocationRequest.setPriority(LocationRequest.PRIORITY_NO_POWER);
-                break;
-            default:
-                mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
-                break;
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
         }
-
-        LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
+        return false;
     }
 
-    @Override
-    public void onConnectionSuspended(int i) {
-
-    }
-
-    /**
-     * Zpracuje novou pozici
-     * @param location
-     */
-    private void processLocation(Location location)
+    private void UpdateGUI(Location location, String serverResponse)
     {
         if (location != null) {
-            mCurrentLocation = location;
             //2014-06-28T15:07:59
-            String mLastUpdateTime =  new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(mCurrentLocation.getTime());
-            String lat = String.valueOf(mCurrentLocation.getLatitude());
-            String lon = String.valueOf(mCurrentLocation.getLongitude());
-            String alt = String.valueOf(mCurrentLocation.getAltitude());
-            String speed = String.valueOf(mCurrentLocation.getSpeed());
-            String bearing = String.valueOf(mCurrentLocation.getBearing());
-
+            String mLastUpdateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(location.getTime());
+            String lat = Double.toString(location.getLatitude());
+            String lon = Double.toString(location.getLongitude());
+            String alt = String.valueOf(location.getAltitude());
+            String speed = String.valueOf(location.getSpeed());
+            String bearing = String.valueOf(location.getBearing());
             TextView dateText = (TextView) findViewById(R.id.text_position_date);
             dateText.setText(getResources().getString(R.string.textview_date) + mLastUpdateTime);
 
@@ -248,85 +197,41 @@ public class MainScreen extends ActionBarActivity implements GoogleApiClient.Con
 
             TextView speedBearing = (TextView) findViewById(R.id.text_position_bearing);
             speedBearing.setText(getResources().getString(R.string.textview_bearing) + bearing);
+        }
 
-            /*
-            Odeslani na server
-             */
-            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-            String targetURL = sharedPref.getString("pref_targetUrl", "");
-
-            new NetworkTask().execute(targetURL, mLastUpdateTime, lat, lon, alt, speed, bearing);
+        if (serverResponse != null)
+        {
+            TextView httpRespText = (TextView) findViewById(R.id.text_http_response);
+            httpRespText.setText(serverResponse);
         }
     }
 
     /**
-     * Called when the location has changed.
-     * <p/>
-     * <p> There are no restrictions on the use of the supplied Location object.
-     *
-     * @param location The new location, as a Location object.
+     * This class uses the BroadcastReceiver framework to detect and handle new postition messages from
+     * the service
      */
-    @Override
-    public void onLocationChanged(Location location) {
-        processLocation(location);
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult connectionResult) {
-
-    }
-
-    /**
-     * Privátní třída, která asynchronně posílá POST data na URL
-     */
-    private class NetworkTask extends AsyncTask<String, Void, HttpResponse> {
-        @Override
-        protected HttpResponse doInBackground(String... params) {
-            String targetURL = params[0];
-            HttpPost httppost = new HttpPost(targetURL);
-            AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
-
-            try {
-                // Add data
-                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(6);
-                nameValuePairs.add(new BasicNameValuePair("time", params[1]));
-                nameValuePairs.add(new BasicNameValuePair("lat", params[2]));
-                nameValuePairs.add(new BasicNameValuePair("lon", params[3]));
-                nameValuePairs.add(new BasicNameValuePair("alt", params[4]));
-                nameValuePairs.add(new BasicNameValuePair("speed", params[5]));
-                nameValuePairs.add(new BasicNameValuePair("bearing", params[6]));
-                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
-
-                return client.execute(httppost);
-
-            } catch (IOException e) {
-                e.printStackTrace();
-                return null;
-            } finally {
-                client.close();
-            }
+    private class NewPositionReceiver extends BroadcastReceiver
+    {
+        private NewPositionReceiver()
+        {
+            // prevents instantiation by other packages.
         }
 
         /**
-         * Zpracování odpovědi
-         * @param result
+         * This method is called by the system when a broadcast Intent is matched by this class'
+         * intent filters
+         * @param context
+         * @param intent
          */
         @Override
-        protected void onPostExecute(HttpResponse result) {
-            // Convert the response into a String
-            HttpEntity resEntity = result.getEntity();
-            // Write the response to a textview
-            if (resEntity != null) {
-                String data = null;
-                try {
-                    data = EntityUtils.toString(resEntity);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                TextView httpRespText = (TextView) findViewById(R.id.text_http_response);
-                httpRespText.setText(data);
+        public void onReceive(Context context, Intent intent) {
+            Location location = (Location)intent.getExtras().get(Constants.POSITION_DATA);
+            String serverResponse = intent.getStringExtra(Constants.SERVER_RESPONSE);
+            if (location != null || serverResponse != null) {
+                UpdateGUI(location,serverResponse);
             }
         }
     }
+
 }
 
