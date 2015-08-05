@@ -34,6 +34,9 @@ import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
@@ -62,6 +65,7 @@ public class BackgroundLocationService extends Service implements
     private int NOTIFICATION = 1975; //Any unique number for this notification
 
     private String mServerResponse;
+    private Integer mFrequency = 30;
 
     public class LocalBinder extends Binder {
         public BackgroundLocationService getServerInstance() {
@@ -154,13 +158,13 @@ public class BackgroundLocationService extends Service implements
         processLocation(LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient));
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        Integer freq = Integer.valueOf(sharedPref.getString("pref_frequency","30"));
+        mFrequency = Integer.valueOf(sharedPref.getString("pref_frequency","30"));
 
         /*
         Inicializace pravidelného získávání polohy
          */
         LocationRequest mLocationRequest = new LocationRequest();
-        mLocationRequest.setInterval(freq * 1000);
+        mLocationRequest.setInterval(mFrequency * 1000);
         mLocationRequest.setFastestInterval(1000);
 
         String listPrefs = sharedPref.getString("pref_strategy", "PRIORITY_BALANCED_POWER_ACCURACY");
@@ -187,7 +191,7 @@ public class BackgroundLocationService extends Service implements
     public void onConnectionSuspended(int i) {
         // Display the connection status
         Toast.makeText(this, "Location Services suspended: " + i, Toast.LENGTH_SHORT).show();
-        if(Constants.INFO) Log.i(TAG, "Location Services suspended: " + i);
+        Log.e(TAG, "Location Services suspended: " + i);
     }
 
     /*
@@ -197,8 +201,8 @@ public class BackgroundLocationService extends Service implements
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
         // Display the connection status
-        Toast.makeText(this, "Location Services fails: " + connectionResult.getErrorCode(), Toast.LENGTH_SHORT).show();
-        if(Constants.INFO) Log.i(TAG, "Location Services fails: " + connectionResult.getErrorCode());
+        Toast.makeText(this, "Connection to Location Services fails: " + connectionResult.getErrorCode(), Toast.LENGTH_SHORT).show();
+        Log.e(TAG, "Connection to Location Services fails: " + connectionResult.getErrorCode());
     }
 
     /**
@@ -220,36 +224,41 @@ public class BackgroundLocationService extends Service implements
      */
     private void processLocation(Location location) {
         if (location != null) {
-            //2014-06-28T15:07:59
-            String mLastUpdateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(location.getTime());
-            String lat = Double.toString(location.getLatitude());
-            String lon = Double.toString(location.getLongitude());
-            String alt = String.valueOf(location.getAltitude());
-            String speed = String.valueOf(location.getSpeed());
-            String bearing = String.valueOf(location.getBearing());
+            try {
+                //2014-06-28T15:07:59
+                String mLastUpdateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(location.getTime());
+                String lat = Double.toString(location.getLatitude());
+                String lon = Double.toString(location.getLongitude());
+                String alt = String.valueOf(location.getAltitude());
+                String speed = String.valueOf(location.getSpeed());
+                String bearing = String.valueOf(location.getBearing());
 
             /*
             Odeslani na server
              */
-            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-            String targetURL = sharedPref.getString("pref_targetUrl", "");
+                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+                String targetURL = sharedPref.getString("pref_targetUrl", "");
 
-            if (isNetworkOnline()) {
-                new NetworkTask().execute(targetURL, mLastUpdateTime, lat, lon, alt, speed, bearing);
+                if (isNetworkOnline() && targetURL != null && !targetURL.isEmpty()) {
+                    new NetworkTask().execute(targetURL, mLastUpdateTime, lat, lon, alt, speed, bearing);
 
-                 /*
-                 * Broadcast position data to MainScreen
-                 */
-                Intent localIntent =  new Intent(Constants.LOCATION_BROADCAST);
-                localIntent.putExtra(Constants.POSITION_DATA, location);
-                localIntent.putExtra(Constants.SERVER_RESPONSE, mServerResponse);
-                // Broadcasts the Intent to receivers in this app.
-                LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+                    Intent localIntent =  new Intent(Constants.LOCATION_BROADCAST);
+                    localIntent.putExtra(Constants.POSITION_DATA, location);
+                    localIntent.putExtra(Constants.SERVER_RESPONSE, mServerResponse);
 
-                if(Constants.INFO) Log.i(TAG, "Position sent to server " + lat + "," + lon);
-            } else
-            {
-                Log.e(TAG, "No internet connection!");
+                    // Broadcasts the Intent to receivers in this app.
+                    LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+
+                    if(Constants.INFO) Log.i(TAG, "Position sent to server " + lat + ", " + lon);
+                } else
+                {
+                    Toast.makeText(this, "Cannot connect to server: '" +targetURL + "'", Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Cannot connect to server: '" + targetURL + "'");
+                }
+            } catch (Exception e) {
+                Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                e.printStackTrace();
+                Log.e(TAG, e.getMessage());
             }
         }
     }
@@ -276,8 +285,13 @@ public class BackgroundLocationService extends Service implements
             String targetURL = params[0];
 
             HttpPost httppost = new HttpPost(targetURL);
-            AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
 
+            HttpParams httpParams = new BasicHttpParams();
+            HttpConnectionParams.setConnectionTimeout(httpParams, (mFrequency - 1) * 1000);
+            HttpConnectionParams.setSoTimeout(httpParams, (mFrequency - 1) * 1000);
+            httppost.setParams(httpParams);
+
+            AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
             try {
                 // Add data
                 List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(6);
