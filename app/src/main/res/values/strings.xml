@@ -27,4 +27,11 @@
     <string name="pref_keep_screen_on_summ">Keep screen on during localization</string>
     <string name="pref_keep_cpu_on">Keep CPU on</string>
     <string name="pref_keep_cpu_on_summ">Keep localization even if screen is off</string>
+    <string name="localiz_run">Localization is running</string>
+    <string name="localiz_not_run">Localization is not running</string>
+    <string name="localiz_started">Localization started</string>
+    <string name="localiz_could_not_start">Could not start localization service</string>
+    <string name="localiz_stopped">Localization stopped</string>
+    <string name="notif_title">T-Rex localization is running</string>
+    <string name="notif_text">Touch to show application</string>
 </resources>
