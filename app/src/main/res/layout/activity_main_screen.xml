@@ -2,56 +2,61 @@
     android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="20dp">
-    <Button
-        android:id="@+id/button_start"
-        android:text="@string/button_start_sending"
-        android:onClick="startSending"
+    android:padding="20dp"
+    android:theme="@style/MainScreenTheme">
+
+    <Switch
+        android:id="@+id/swith_start"
+        android:textColor="@android:color/primary_text_dark"
+        android:text="Localization"
+        android:textOn="Start"
+        android:textOff="Stop"
         android:layout_width="fill_parent"
-        android:layout_height="60dp" />
-    <Button
-        android:id="@+id/button_stop"
-        android:text="@string/button_stop_sending"
-        android:onClick="stopSending"
+        android:layout_height="40dp" />
+    <ToggleButton
+        android:id="@+id/toggle_start"
+        android:textOn="Stop"
+        android:textOff="Start"
         android:layout_width="fill_parent"
-        android:layout_height="60dp" />
+        android:layout_height="60dp"
+        android:textColor="@android:color/holo_blue_dark" />
     <TextView
         android:id="@+id/text_position_date"
         android:text="@string/textview_date"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
     <TextView
         android:id="@+id/text_position_lat"
         android:text="@string/textview_lat"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
     <TextView
         android:id="@+id/text_position_lon"
         android:text="@string/textview_lon"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
     <TextView
         android:id="@+id/text_position_alt"
         android:text="@string/textview_alt"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
     <TextView
         android:id="@+id/text_position_speed"
         android:text="@string/textview_speed"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
     <TextView
         android:id="@+id/text_position_bearing"
         android:text="@string/textview_bearing"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
     <TextView
         android:id="@+id/text_http_response_title"
         android:text="@string/textview_http_response_title"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
     <TextView
         android:id="@+id/text_http_response"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"/>
 </LinearLayout>
