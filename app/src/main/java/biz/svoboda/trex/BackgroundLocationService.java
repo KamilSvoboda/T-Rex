@@ -194,7 +194,7 @@ public class BackgroundLocationService extends Service implements
     @Override
     public void onConnectionSuspended(int i) {
         // Display the connection status
-        Toast.makeText(this, "Location Services suspended: " + i, Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Location Services suspended: " + i, Toast.LENGTH_LONG).show();
         Log.e(TAG, "Location Services suspended: " + i);
     }
 
@@ -205,7 +205,7 @@ public class BackgroundLocationService extends Service implements
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
         // Display the connection status
-        Toast.makeText(this, "Connection to Location Services fails: " + connectionResult.getErrorCode(), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Connection to Location Services fails: " + connectionResult.getErrorCode(), Toast.LENGTH_LONG).show();
         Log.e(TAG, "Connection to Location Services fails: " + connectionResult.getErrorCode());
     }
 
@@ -253,11 +253,11 @@ public class BackgroundLocationService extends Service implements
                     if(Constants.INFO) Log.i(TAG, "Position sent to server " + lat + ", " + lon);
                 } else
                 {
-                    Toast.makeText(this, "Cannot connect to server: '" +targetURL + "'", Toast.LENGTH_SHORT).show();
-                    Log.e(TAG, "Cannot connect to server: '" + targetURL + "'");
+                    Toast.makeText(this, "Cannot connect to server: '" + mTargetServerURL + "'", Toast.LENGTH_LONG).show();
+                    Log.e(TAG, "Cannot connect to server: '" + mTargetServerURL + "'");
                 }
             } catch (Exception e) {
-                Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
                 e.printStackTrace();
                 Log.e(TAG, e.getMessage());
             }
