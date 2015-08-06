@@ -1,7 +1,5 @@
 package biz.svoboda.trex;
 
-import android.app.Notification;
-import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.TaskStackBuilder;
@@ -40,16 +38,13 @@ import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 
 /**
  * BackgroundLocationService used for tracking user location in the background.
  * https://gist.github.com/blackcj/20efe2ac885c7297a676
- * @author cblack
  */
 public class BackgroundLocationService extends Service implements
         GoogleApiClient.ConnectionCallbacks,
@@ -62,10 +57,11 @@ public class BackgroundLocationService extends Service implements
 
     private GoogleApiClient mGoogleApiClient;
 
-    private int NOTIFICATION = 1975; //Any unique number for this notification
+    private int NOTIFICATION = 1975; //Unique number for this notification
 
     private String mTargetServerURL;
     private String mServerResponse;
+    private String mListPrefs;
     private Integer mFrequency = 30;
 
     public class LocalBinder extends Binder {
@@ -85,6 +81,8 @@ public class BackgroundLocationService extends Service implements
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         mTargetServerURL = sharedPref.getString("pref_targetUrl", "");
+        mListPrefs = sharedPref.getString("pref_strategy", "PRIORITY_BALANCED_POWER_ACCURACY");
+        mFrequency = Integer.valueOf(sharedPref.getString("pref_frequency", "30"));
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -161,18 +159,11 @@ public class BackgroundLocationService extends Service implements
     public void onConnected(Bundle bundle) {
         processLocation(LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient));
 
-        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        mFrequency = Integer.valueOf(sharedPref.getString("pref_frequency","30"));
-
-        /*
-        Inicializace pravidelného získávání polohy
-         */
         LocationRequest mLocationRequest = new LocationRequest();
         mLocationRequest.setInterval(mFrequency * 1000);
         mLocationRequest.setFastestInterval(1000);
 
-        String listPrefs = sharedPref.getString("pref_strategy", "PRIORITY_BALANCED_POWER_ACCURACY");
-        switch (listPrefs)
+        switch (mListPrefs)
         {
             case "PRIORITY_HIGH_ACCURACY":
                 mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
@@ -193,7 +184,6 @@ public class BackgroundLocationService extends Service implements
 
     @Override
     public void onConnectionSuspended(int i) {
-        // Display the connection status
         Toast.makeText(this, "Location Services suspended: " + i, Toast.LENGTH_LONG).show();
         Log.e(TAG, "Location Services suspended: " + i);
     }
@@ -204,7 +194,6 @@ public class BackgroundLocationService extends Service implements
      */
     @Override
     public void onConnectionFailed(ConnectionResult connectionResult) {
-        // Display the connection status
         Toast.makeText(this, "Connection to Location Services fails: " + connectionResult.getErrorCode(), Toast.LENGTH_LONG).show();
         Log.e(TAG, "Connection to Location Services fails: " + connectionResult.getErrorCode());
     }
@@ -229,17 +218,13 @@ public class BackgroundLocationService extends Service implements
     private void processLocation(Location location) {
         if (location != null) {
             try {
-                //2014-06-28T15:07:59
-                String mLastUpdateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(location.getTime());
+                String mLastUpdateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(location.getTime());//2014-06-28T15:07:59
                 String lat = Double.toString(location.getLatitude());
                 String lon = Double.toString(location.getLongitude());
-                String alt = String.valueOf(location.getAltitude());
-                String speed = String.valueOf(location.getSpeed());
-                String bearing = String.valueOf(location.getBearing());
+                String alt = Double.toString(location.getAltitude());
+                String speed = Float.toString(location.getSpeed());
+                String bearing = Float.toString(location.getBearing());
 
-            /*
-            Odeslani na server
-             */
                 if (isNetworkOnline() && mTargetServerURL != null && !mTargetServerURL.isEmpty()) {
                     new NetworkTask().execute(mTargetServerURL, mLastUpdateTime, lat, lon, alt, speed, bearing);
 
@@ -278,7 +263,7 @@ public class BackgroundLocationService extends Service implements
     }
 
     /**
-     * Privátní třída, která asynchronně posílá POST data na URL
+     * Private class for sending data
      */
     private class NetworkTask extends AsyncTask<String, Void, HttpResponse> {
         @Override
@@ -288,7 +273,7 @@ public class BackgroundLocationService extends Service implements
             HttpPost httppost = new HttpPost(targetURL);
 
             HttpParams httpParams = new BasicHttpParams();
-            HttpConnectionParams.setConnectionTimeout(httpParams, (mFrequency - 1) * 1000);
+            HttpConnectionParams.setConnectionTimeout(httpParams, (mFrequency - 1) * 1000); //connection timeout settings
             HttpConnectionParams.setSoTimeout(httpParams, (mFrequency - 1) * 1000);
             httppost.setParams(httpParams);
 
@@ -315,7 +300,7 @@ public class BackgroundLocationService extends Service implements
         }
 
         /**
-         * Zpracování odpovědi
+         * Response processing
          * @param result
          */
         @Override
