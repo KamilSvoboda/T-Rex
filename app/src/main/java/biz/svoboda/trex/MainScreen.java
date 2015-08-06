@@ -16,10 +16,11 @@ import android.support.v7.app.ActionBarActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 import android.view.WindowManager;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.text.SimpleDateFormat;
 
@@ -37,6 +38,21 @@ public class MainScreen extends ActionBarActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_screen);
+
+        ToggleButton toggle = (ToggleButton) findViewById(R.id.toggle_start);
+
+        //sets toggle state before listener is attached
+        toggle.setChecked(getIntent().getBooleanExtra(Constants.EXTRAS_LOCALIZATION_IS_RUNNING, false));
+
+        toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                if (isChecked) {
+                    startSending();
+                } else {
+                    stopSending();
+                }
+            }
+        });
 
         //Registrace broadcastreceiveru komunikaci se sluzbou (musi byt tady, aby fungoval i po nove inicializaci aplikace z notifikace
         // The filter's action is BROADCAST_ACTION
@@ -72,11 +88,9 @@ public class MainScreen extends ActionBarActivity {
     }
 
     /**
-     * Kliknutí na tlačítko spuštění odesílání
-     *
-     * @param view
+     * Start localizing and sending
      */
-    public void startSending(View view) {
+    public void startSending() {
         if (!isServiceRunning(BackgroundLocationService.class))
         {
             //Check screen on/off settings
@@ -110,11 +124,9 @@ public class MainScreen extends ActionBarActivity {
     }
 
     /**
-     * Kliknutí na tlačítko vypnutí odesílání
-     *
-     * @param view
+     * Switch off sending
      */
-    public void stopSending(View view) {
+    public void stopSending() {
         if (isServiceRunning(BackgroundLocationService.class)) {
             ComponentName comp = new ComponentName(getApplicationContext().getPackageName(), BackgroundLocationService.class.getName());
             getApplicationContext().stopService(new Intent().setComponent(comp));
@@ -222,8 +234,8 @@ public class MainScreen extends ActionBarActivity {
          */
         @Override
         public void onReceive(Context context, Intent intent) {
-            Location location = (Location)intent.getExtras().get(Constants.POSITION_DATA);
-            String serverResponse = intent.getStringExtra(Constants.SERVER_RESPONSE);
+            Location location = (Location)intent.getExtras().get(Constants.EXTRAS_POSITION_DATA);
+            String serverResponse = intent.getStringExtra(Constants.EXTRAS_SERVER_RESPONSE);
             if (location != null || serverResponse != null) {
                 UpdateGUI(location,serverResponse);
             }

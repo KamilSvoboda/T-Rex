@@ -10,13 +10,11 @@ public final class Constants {
     public static boolean INFO = LOGLEVEL > 1;
     public static boolean DEBUG = LOGLEVEL > 2;
 
-    // Defines a custom Intent action
-    public static final String LOCATION_BROADCAST =
-            "biz.svoboda.trex.LOCATION_BROADCAST";
+    // Intent extras key for determinig localization is running
+    public static final String EXTRAS_LOCALIZATION_IS_RUNNING = "biz.svoboda.trex.LOCALIZATION_IS_RUNNING";
 
-    // Defines the key for the status "extra" in an Intent
-    public static final String POSITION_DATA =
-            "biz.svoboda.trex.POSITION_DATA";
-
-    public static final String SERVER_RESPONSE = "biz.svoboda.trex.SERVER_RESPONSE";
+    // Defines a custom Intent action for position broadcasting
+    public static final String LOCATION_BROADCAST = "biz.svoboda.trex.LOCATION_BROADCAST";
+    public static final String EXTRAS_POSITION_DATA = "biz.svoboda.trex.EXTRAS_POSITION_DATA";
+    public static final String EXTRAS_SERVER_RESPONSE = "biz.svoboda.trex.EXTRAS_SERVER_RESPONSE";
 }
