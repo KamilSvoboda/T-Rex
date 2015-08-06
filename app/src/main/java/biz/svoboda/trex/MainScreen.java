@@ -132,22 +132,22 @@ public class MainScreen extends ActionBarActivity {
             getApplicationContext().stopService(new Intent().setComponent(comp));
 
             TextView dateText = (TextView) findViewById(R.id.text_position_date);
-            dateText.setText(getResources().getString(R.string.textview_date));
+            dateText.setText(null);
 
             TextView latText = (TextView) findViewById(R.id.text_position_lat);
-            latText.setText(getResources().getString(R.string.textview_lat));
+            latText.setText(null);
 
             TextView lonText = (TextView) findViewById(R.id.text_position_lon);
-            lonText.setText(getResources().getString(R.string.textview_lon));
+            lonText.setText(null);
 
             TextView altText = (TextView) findViewById(R.id.text_position_alt);
-            altText.setText(getResources().getString(R.string.textview_alt));
+            altText.setText(null);
 
             TextView speedText = (TextView) findViewById(R.id.text_position_speed);
-            speedText.setText(getResources().getString(R.string.textview_speed));
+            speedText.setText(null);
 
             TextView speedBearing = (TextView) findViewById(R.id.text_position_bearing);
-            speedBearing.setText(getResources().getString(R.string.textview_bearing));
+            speedBearing.setText(null);
 
             TextView respText = (TextView) findViewById(R.id.text_http_response);
             respText.setText(null);
@@ -190,22 +190,22 @@ public class MainScreen extends ActionBarActivity {
             String speed = String.valueOf(location.getSpeed());
             String bearing = String.valueOf(location.getBearing());
             TextView dateText = (TextView) findViewById(R.id.text_position_date);
-            dateText.setText(getResources().getString(R.string.textview_date) + mLastUpdateTime);
+            dateText.setText(mLastUpdateTime);
 
             TextView latText = (TextView) findViewById(R.id.text_position_lat);
-            latText.setText(getResources().getString(R.string.textview_lat) + lat);
+            latText.setText(lat);
 
             TextView lonText = (TextView) findViewById(R.id.text_position_lon);
-            lonText.setText(getResources().getString(R.string.textview_lon) + lon);
+            lonText.setText(lon);
 
             TextView altText = (TextView) findViewById(R.id.text_position_alt);
-            altText.setText(getResources().getString(R.string.textview_alt) + alt);
+            altText.setText(alt);
 
             TextView speedText = (TextView) findViewById(R.id.text_position_speed);
-            speedText.setText(getResources().getString(R.string.textview_speed) + speed);
+            speedText.setText(speed);
 
             TextView speedBearing = (TextView) findViewById(R.id.text_position_bearing);
-            speedBearing.setText(getResources().getString(R.string.textview_bearing) + bearing);
+            speedBearing.setText(bearing);
         }
 
         if (serverResponse != null)

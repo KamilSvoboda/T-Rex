@@ -18,36 +18,92 @@
         android:layout_width="fill_parent"
         android:textColor="@android:color/white"
         android:background="@android:color/holo_blue_bright"/>
-    <TextView
-        android:id="@+id/text_position_date"
-        android:text="@string/textview_date"
+
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"/>
-    <TextView
-        android:id="@+id/text_position_lat"
-        android:text="@string/textview_lat"
+        android:layout_height="wrap_content">
+        <TextView
+            android:text="@string/textview_date"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/text_position_date"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"/>
-    <TextView
-        android:id="@+id/text_position_lon"
-        android:text="@string/textview_lon"
+        android:layout_height="wrap_content">
+        <TextView
+            android:text="@string/textview_lat"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/text_position_lat"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"/>
-    <TextView
-        android:id="@+id/text_position_alt"
-        android:text="@string/textview_alt"
+        android:layout_height="wrap_content">
+        <TextView
+            android:text="@string/textview_lon"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/text_position_lon"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"/>
-    <TextView
-        android:id="@+id/text_position_speed"
-        android:text="@string/textview_speed"
+        android:layout_height="wrap_content">
+        <TextView
+            android:text="@string/textview_alt"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/text_position_alt"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"/>
-    <TextView
-        android:id="@+id/text_position_bearing"
-        android:text="@string/textview_bearing"
+        android:layout_height="wrap_content">
+        <TextView
+            android:text="@string/textview_speed"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/text_position_speed"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="horizontal"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp">
+        <TextView
+            android:text="@string/textview_bearing"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"/>
+        <TextView
+            android:id="@+id/text_position_bearing"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
     <TextView
         android:id="@+id/text_http_response_title"
         android:text="@string/textview_http_response_title"

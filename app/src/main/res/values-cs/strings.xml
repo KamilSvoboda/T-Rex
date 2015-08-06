@@ -10,8 +10,8 @@
     <string name="pref_targetUrl_summ">Vložte URL adresu cílového serveru</string>
     <string name="pref_targetUrl_def_value">http://kamil.svobodovi.net/track.php</string>
     <string name="textview_date">Datum:</string>
-    <string name="textview_lat">Latitude:</string>
-    <string name="textview_lon">Longitude:</string>
+    <string name="textview_lat">Zem. šířka:</string>
+    <string name="textview_lon">Zem. délka:</string>
     <string name="textview_alt">Výška:</string>
     <string name="textview_speed">Rychlost:</string>
     <string name="textview_bearing">Směr:</string>
