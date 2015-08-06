@@ -64,6 +64,7 @@ public class BackgroundLocationService extends Service implements
 
     private int NOTIFICATION = 1975; //Any unique number for this notification
 
+    private String mTargetServerURL;
     private String mServerResponse;
     private Integer mFrequency = 30;
 
@@ -81,6 +82,9 @@ public class BackgroundLocationService extends Service implements
     @Override
     public void onCreate() {
         super.onCreate();
+
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        mTargetServerURL = sharedPref.getString("pref_targetUrl", "");
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -236,11 +240,8 @@ public class BackgroundLocationService extends Service implements
             /*
             Odeslani na server
              */
-                SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-                String targetURL = sharedPref.getString("pref_targetUrl", "");
-
-                if (isNetworkOnline() && targetURL != null && !targetURL.isEmpty()) {
-                    new NetworkTask().execute(targetURL, mLastUpdateTime, lat, lon, alt, speed, bearing);
+                if (isNetworkOnline() && mTargetServerURL != null && !mTargetServerURL.isEmpty()) {
+                    new NetworkTask().execute(mTargetServerURL, mLastUpdateTime, lat, lon, alt, speed, bearing);
 
                     Intent localIntent =  new Intent(Constants.LOCATION_BROADCAST);
                     localIntent.putExtra(Constants.POSITION_DATA, location);
