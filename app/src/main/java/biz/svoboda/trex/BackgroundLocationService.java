@@ -27,6 +27,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpException;
 import org.apache.http.HttpResponse;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
@@ -37,10 +38,25 @@ import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
 
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.UnsupportedEncodingException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * BackgroundLocationService used for tracking user location in the background.
@@ -264,58 +280,76 @@ public class BackgroundLocationService extends Service implements
     /**
      * Private class for sending data
      */
-    private class NetworkTask extends AsyncTask<String, Void, HttpResponse> {
+    private class NetworkTask extends AsyncTask<String, Void, String> {
         @Override
-        protected HttpResponse doInBackground(String... params) {
-            String targetURL = params[0];
-
-            HttpPost httppost = new HttpPost(targetURL);
-
-            HttpParams httpParams = new BasicHttpParams();
-            HttpConnectionParams.setConnectionTimeout(httpParams, (mFrequency - 1) * 1000); //connection timeout settings
-            HttpConnectionParams.setSoTimeout(httpParams, (mFrequency - 1) * 1000);
-            httppost.setParams(httpParams);
-
-            AndroidHttpClient client = AndroidHttpClient.newInstance("Android");
+        protected String doInBackground(String... params) {
+            String response = "";
             try {
-                // Add data
-                List<NameValuePair> nameValuePairs = new ArrayList<NameValuePair>(6);
-                nameValuePairs.add(new BasicNameValuePair("time", params[1]));
-                nameValuePairs.add(new BasicNameValuePair("lat", params[2]));
-                nameValuePairs.add(new BasicNameValuePair("lon", params[3]));
-                nameValuePairs.add(new BasicNameValuePair("alt", params[4]));
-                nameValuePairs.add(new BasicNameValuePair("speed", params[5]));
-                nameValuePairs.add(new BasicNameValuePair("bearing", params[6]));
-                httppost.setEntity(new UrlEncodedFormEntity(nameValuePairs));
+                URL url = new URL(params[0]);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setReadTimeout((mFrequency - 1) * 1000);
+                conn.setConnectTimeout((mFrequency - 1) * 1000);
+                conn.setRequestMethod("POST");
+                conn.setDoInput(true);
+                conn.setDoOutput(true);
 
-                return client.execute(httppost);
+                HashMap<String, String> postDataParams = new HashMap<>();
+                postDataParams.put("time", params[1]);
+                postDataParams.put("lat", params[2]);
+                postDataParams.put("lon", params[3]);
+                postDataParams.put("alt", params[4]);
+                postDataParams.put("speed", params[5]);
+                postDataParams.put("bearing", params[6]);
 
-            } catch (IOException e) {
+                OutputStream os = conn.getOutputStream();
+                BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
+                writer.write(getPostDataString(postDataParams));
+                writer.flush();
+                writer.close();
+                os.close();
+
+                int responseCode = conn.getResponseCode();
+
+                if (responseCode == HttpsURLConnection.HTTP_OK) {
+                    String line;
+                    BufferedReader br=new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    while ((line=br.readLine()) != null) {
+                        response+=line;
+                    }
+                }
+                else {
+                    throw new HttpException(responseCode+"");
+                }
+            } catch (Exception e) {
+                Log.e(TAG,e.getMessage());
                 e.printStackTrace();
                 return null;
-            } finally {
-                client.close();
             }
+            return response;
         }
 
+        private String getPostDataString(HashMap<String, String> params) throws UnsupportedEncodingException{
+            StringBuilder result = new StringBuilder();
+            boolean first = true;
+            for(Map.Entry<String, String> entry : params.entrySet()){
+                if (first)
+                    first = false;
+                else
+                    result.append("&");
+
+                result.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+                result.append("=");
+                result.append(URLEncoder.encode(entry.getValue(), "UTF-8"));
+            }
+            return result.toString();
+        }
         /**
          * Response processing
          * @param result
          */
         @Override
-        protected void onPostExecute(HttpResponse result) {
-            // Convert the response into a String
-            HttpEntity resEntity = result.getEntity();
-            // Write the response to a textview
-            if (resEntity != null) {
-                String data = null;
-                try {
-                    data = EntityUtils.toString(resEntity);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                mServerResponse = data;
-            }
+        protected void onPostExecute(String result) {
+            mServerResponse = result;
         }
     }
 }
