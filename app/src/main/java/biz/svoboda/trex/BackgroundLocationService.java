@@ -260,8 +260,8 @@ public class BackgroundLocationService extends Service implements
                 }
             } catch (Exception e) {
                 Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
+                Log.e(TAG, "Error during location parsing:", e);
                 e.printStackTrace();
-                Log.e(TAG, e.getMessage());
             }
         }
     }
@@ -321,10 +321,10 @@ public class BackgroundLocationService extends Service implements
                     }
                 }
                 else {
-                    throw new HttpException(responseCode+"");
+                    throw new HttpException("HTTP response: " + responseCode);
                 }
             } catch (Exception e) {
-                Log.e(TAG,e.getMessage());
+                Log.e(TAG, "Error during network connection:", e);
                 e.printStackTrace();
                 return null;
             }
