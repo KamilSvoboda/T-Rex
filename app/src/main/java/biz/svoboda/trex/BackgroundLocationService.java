@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.Bundle;
@@ -26,34 +25,19 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 
-import org.apache.http.HttpEntity;
 import org.apache.http.HttpException;
-import org.apache.http.HttpResponse;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.util.EntityUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -73,6 +57,8 @@ public class BackgroundLocationService extends Service implements
 
     private GoogleApiClient mGoogleApiClient;
 
+    private Location mLastSendedLocation; //last lccation sent to server
+
     private int NOTIFICATION = 1975; //Unique number for this notification
 
     private String mTargetServerURL;
@@ -80,6 +66,8 @@ public class BackgroundLocationService extends Service implements
     private String mServerResponse;
     private String mListPrefs;
     private Integer mFrequency = 30;
+    private Integer mMinDistance = 100;
+    private Integer mMaxInterval = 10;
 
     public class LocalBinder extends Binder {
         public BackgroundLocationService getServerInstance() {
@@ -97,10 +85,12 @@ public class BackgroundLocationService extends Service implements
         super.onCreate();
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        mTargetServerURL = sharedPref.getString("pref_targetUrl", "");
+        mTargetServerURL = sharedPref.getString("pref_targetUrl","");
         mDeviceIdentifier = sharedPref.getString("pref_id","");
         mListPrefs = sharedPref.getString("pref_strategy", "PRIORITY_BALANCED_POWER_ACCURACY");
-        mFrequency = Integer.valueOf(sharedPref.getString("pref_frequency", "30"));
+        mFrequency = Integer.valueOf(sharedPref.getString("pref_frequency", String.valueOf(mFrequency)));
+        mMinDistance = Integer.valueOf(sharedPref.getString("pref_min_dist", String.valueOf(mMinDistance)));
+        mMaxInterval = Integer.valueOf(sharedPref.getString("pref_max_time", String.valueOf(mMaxInterval)));
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
@@ -235,34 +225,57 @@ public class BackgroundLocationService extends Service implements
     private void processLocation(Location location) {
         if (location != null) {
             try {
-                String mLastUpdateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(location.getTime());//2014-06-28T15:07:59
-                String lat = Double.toString(location.getLatitude());
-                String lon = Double.toString(location.getLongitude());
-                String alt = Double.toString(location.getAltitude());
-                String speed = Float.toString(location.getSpeed());
-                String bearing = Float.toString(location.getBearing());
-
-                if (isNetworkOnline() && mTargetServerURL != null && !mTargetServerURL.isEmpty()) {
-                    new NetworkTask().execute(mTargetServerURL, mDeviceIdentifier, mLastUpdateTime, lat, lon, alt, speed, bearing);
-
-                    Intent localIntent =  new Intent(Constants.LOCATION_BROADCAST);
-                    localIntent.putExtra(Constants.EXTRAS_POSITION_DATA, location);
-                    localIntent.putExtra(Constants.EXTRAS_SERVER_RESPONSE, mServerResponse);
-
-                    // Broadcasts the Intent to receivers in this app.
-                    LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
-
-                    if(Constants.INFO) Log.i(TAG, "Position sent to server " + lat + ", " + lon);
-                } else
+                if (mLastSendedLocation == null)
                 {
-                    Toast.makeText(this, "Cannot connect to server: '" + mTargetServerURL + "'", Toast.LENGTH_LONG).show();
-                    Log.e(TAG, "Cannot connect to server: '" + mTargetServerURL + "'");
+                    SendPosition(location);
+                    return;
                 }
+
+                //calculate minutes diff between last and current location
+                long diff = location.getTime() - mLastSendedLocation.getTime();
+                long diffMinutes = diff / (60 * 1000) % 60;
+
+                if ((diffMinutes >= mMaxInterval) || ( mLastSendedLocation.distanceTo(location) >= mMinDistance))
+                    SendPosition(location);
+
             } catch (Exception e) {
                 Toast.makeText(this, e.getLocalizedMessage(), Toast.LENGTH_LONG).show();
                 Log.e(TAG, "Error during location parsing:", e);
                 e.printStackTrace();
             }
+        }
+    }
+
+    /**
+     * Send location to the server
+     * @param location
+     */
+    private void SendPosition(Location location) {
+        if (isNetworkOnline() && mTargetServerURL != null && !mTargetServerURL.isEmpty()) {
+
+            String lastUpdateTime = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss").format(location.getTime());//2014-06-28T15:07:59
+            String lat = Double.toString(location.getLatitude());
+            String lon = Double.toString(location.getLongitude());
+            String alt = Double.toString(location.getAltitude());
+            String speed = Float.toString(location.getSpeed());
+            String bearing = Float.toString(location.getBearing());
+
+            new NetworkTask().execute(mTargetServerURL, mDeviceIdentifier, lastUpdateTime, lat, lon, alt, speed, bearing);
+
+            Intent localIntent =  new Intent(Constants.LOCATION_BROADCAST);
+            localIntent.putExtra(Constants.EXTRAS_POSITION_DATA, location);
+            localIntent.putExtra(Constants.EXTRAS_SERVER_RESPONSE, mServerResponse);
+
+            // Broadcasts the Intent to receivers in this app.
+            LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
+
+            mLastSendedLocation = location;
+
+            if(Constants.INFO) Log.i(TAG, "Position sent to server " + lat + ", " + lon);
+        } else
+        {
+            Toast.makeText(this, "Cannot connect to server: '" + mTargetServerURL + "'", Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Cannot connect to server: '" + mTargetServerURL + "'");
         }
     }
 

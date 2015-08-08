@@ -19,7 +19,7 @@
     <string name="textview_speed">Speed:</string>
     <string name="textview_bearing">Bearing:</string>
     <string name="pref_location_category">Localization settings</string>
-    <string name="pref_frequency">Frequency (sec)</string>
+    <string name="pref_frequency">Localization frequency (sec)</string>
     <string name="pref_frequency_summ">Insert frequency of localization in seconds</string>
     <string name="pref_min_dist">Minimal distance (m)</string>
     <string name="pref_min_dist_summ">Minimal distance required to send position (in meters)</string>

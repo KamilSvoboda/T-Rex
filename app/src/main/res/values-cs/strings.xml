@@ -17,8 +17,8 @@
     <string name="textview_alt">Výška:</string>
     <string name="textview_speed">Rychlost:</string>
     <string name="textview_bearing">Směr:</string>
-    <string name="pref_location_category">Zjištění polohy</string>
-    <string name="pref_frequency">Frekvence (sec)</string>
+    <string name="pref_location_category">Zjišťování a odesílání polohy</string>
+    <string name="pref_frequency">Frekvence localizace (sec)</string>
     <string name="pref_frequency_summ">Frekvence lokalizace ve vteřinách</string>
     <string name="pref_min_dist">Minimální vzdálenost (m)</string>
     <string name="pref_min_dist_summ">Minimální změna ve vzdálenosti (v metrech), nutná k odeslání pozice</string>
