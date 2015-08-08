@@ -20,6 +20,10 @@
     <string name="pref_location_category">Zjištění polohy</string>
     <string name="pref_frequency">Frekvence (sec)</string>
     <string name="pref_frequency_summ">Frekvence lokalizace ve vteřinách</string>
+    <string name="pref_min_dist">Minimální vzdálenost (m)</string>
+    <string name="pref_min_dist_summ">Minimální změna ve vzdálenosti (v metrech), nutná k odeslání pozice</string>
+    <string name="pref_max_interval">Maximální interval (min)</string>
+    <string name="pref_max_interval_sum">Maximální doba, bez odeslané pozice (v minutách) - měla by být delší, než frekvence zjišťování polohy</string>
     <string name="pref_strategy">Způsob lokalizace</string>
     <string name="pref_strategy_sum">Přenost a způsob lokalizace</string>
     <string name="textview_http_response_title">Odpověď serveru:</string>

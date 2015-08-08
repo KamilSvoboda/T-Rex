@@ -21,6 +21,10 @@
     <string name="pref_location_category">Localization settings</string>
     <string name="pref_frequency">Frequency (sec)</string>
     <string name="pref_frequency_summ">Insert frequency of localization in seconds</string>
+    <string name="pref_min_dist">Minimal distance (m)</string>
+    <string name="pref_min_dist_summ">Minimal distance required to send position (in meters)</string>
+    <string name="pref_max_interval">Max interval of position sending (min)</string>
+    <string name="pref_max_interval_sum">Maximal interval of sending position (in minutes) - have to be longer then localization frequency</string>
     <string name="pref_strategy">Localization strategy</string>
     <string name="pref_strategy_sum">Accuracy and localization strategy</string>
     <string name="textview_http_response_title">Server response:</string>

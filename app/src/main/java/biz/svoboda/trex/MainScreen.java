@@ -31,7 +31,6 @@ public class MainScreen extends ActionBarActivity {
 
     private String mDeviceId;
     private Boolean mKeepScreenOn = false;
-    private Boolean mKeepCpuOn = true;
 
     private PowerManager.WakeLock mWakeLock;
 
@@ -100,16 +99,15 @@ public class MainScreen extends ActionBarActivity {
         {
             if (!isServiceRunning(BackgroundLocationService.class))
             {
+                //Keep CPU on
+                PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+                mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                        "TRexWakelockTag");
+                mWakeLock.acquire();
+
                 mKeepScreenOn = sharedPref.getBoolean("pref_screen_on", false);
-                mKeepCpuOn = sharedPref.getBoolean("pref_cpu_on", true);
                 if (mKeepScreenOn)
                     getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-                if (mKeepCpuOn) {
-                    PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-                    mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                            "TRexWakelockTag");
-                    mWakeLock.acquire();
-                }
 
                 //Nastartovani sluzby
                 ComponentName comp = new ComponentName(getApplicationContext().getPackageName(), BackgroundLocationService.class.getName());
