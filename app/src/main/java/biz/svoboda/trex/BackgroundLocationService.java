@@ -76,6 +76,7 @@ public class BackgroundLocationService extends Service implements
     private int NOTIFICATION = 1975; //Unique number for this notification
 
     private String mTargetServerURL;
+    private String mDeviceIdentifier;
     private String mServerResponse;
     private String mListPrefs;
     private Integer mFrequency = 30;
@@ -97,6 +98,7 @@ public class BackgroundLocationService extends Service implements
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         mTargetServerURL = sharedPref.getString("pref_targetUrl", "");
+        mDeviceIdentifier = sharedPref.getString("pref_id","");
         mListPrefs = sharedPref.getString("pref_strategy", "PRIORITY_BALANCED_POWER_ACCURACY");
         mFrequency = Integer.valueOf(sharedPref.getString("pref_frequency", "30"));
 
@@ -241,7 +243,7 @@ public class BackgroundLocationService extends Service implements
                 String bearing = Float.toString(location.getBearing());
 
                 if (isNetworkOnline() && mTargetServerURL != null && !mTargetServerURL.isEmpty()) {
-                    new NetworkTask().execute(mTargetServerURL, mLastUpdateTime, lat, lon, alt, speed, bearing);
+                    new NetworkTask().execute(mTargetServerURL, mDeviceIdentifier, mLastUpdateTime, lat, lon, alt, speed, bearing);
 
                     Intent localIntent =  new Intent(Constants.LOCATION_BROADCAST);
                     localIntent.putExtra(Constants.EXTRAS_POSITION_DATA, location);
@@ -294,12 +296,13 @@ public class BackgroundLocationService extends Service implements
                 conn.setDoOutput(true);
 
                 HashMap<String, String> postDataParams = new HashMap<>();
-                postDataParams.put("time", params[1]);
-                postDataParams.put("lat", params[2]);
-                postDataParams.put("lon", params[3]);
-                postDataParams.put("alt", params[4]);
-                postDataParams.put("speed", params[5]);
-                postDataParams.put("bearing", params[6]);
+                postDataParams.put("i", params[1]);
+                postDataParams.put("t", params[2]);
+                postDataParams.put("a", params[3]);
+                postDataParams.put("o", params[4]);
+                postDataParams.put("l", params[5]);
+                postDataParams.put("s", params[6]);
+                postDataParams.put("b", params[7]);
 
                 OutputStream os = conn.getOutputStream();
                 BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));

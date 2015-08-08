@@ -6,6 +6,10 @@
             android:inputType="textUri"
             android:summary="@string/pref_targetUrl_summ"
             android:defaultValue="@string/pref_targetUrl_def_value"/>
+        <EditTextPreference android:key="pref_id"
+            android:title="@string/pref_id"
+            android:inputType="text"
+            android:summary="@string/pref_id_summ"/>
     </PreferenceCategory>
     <PreferenceCategory android:key="pref_location_category" android:title="@string/pref_location_category">
         <EditTextPreference

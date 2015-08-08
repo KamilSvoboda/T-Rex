@@ -29,6 +29,7 @@ public class MainScreen extends ActionBarActivity {
     /*TODO: https://gist.github.com/blackcj/20efe2ac885c7297a676 */
     private static final String TAG = "MainScreen";
 
+    private String mDeviceId;
     private Boolean mKeepScreenOn = false;
     private Boolean mKeepCpuOn = true;
 
@@ -91,36 +92,44 @@ public class MainScreen extends ActionBarActivity {
      * Start localizing and sending
      */
     public void startSending() {
-        if (!isServiceRunning(BackgroundLocationService.class))
+        //Check screen on/off settings
+        SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        mDeviceId = sharedPref.getString("pref_id","");
+
+        if (!mDeviceId.isEmpty())
         {
-            //Check screen on/off settings
-            SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-            mKeepScreenOn = sharedPref.getBoolean("pref_screen_on", false);
-            mKeepCpuOn = sharedPref.getBoolean("pref_cpu_on", true);
-            if (mKeepScreenOn)
-                getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-            if (mKeepCpuOn) {
-                PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
-                mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
-                        "TRexWakelockTag");
-                mWakeLock.acquire();
-            }
+            if (!isServiceRunning(BackgroundLocationService.class))
+            {
+                mKeepScreenOn = sharedPref.getBoolean("pref_screen_on", false);
+                mKeepCpuOn = sharedPref.getBoolean("pref_cpu_on", true);
+                if (mKeepScreenOn)
+                    getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+                if (mKeepCpuOn) {
+                    PowerManager powerManager = (PowerManager) getSystemService(POWER_SERVICE);
+                    mWakeLock = powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,
+                            "TRexWakelockTag");
+                    mWakeLock.acquire();
+                }
 
-            //Nastartovani sluzby
-            ComponentName comp = new ComponentName(getApplicationContext().getPackageName(), BackgroundLocationService.class.getName());
-            ComponentName service = getApplicationContext().startService(new Intent().setComponent(comp));
+                //Nastartovani sluzby
+                ComponentName comp = new ComponentName(getApplicationContext().getPackageName(), BackgroundLocationService.class.getName());
+                ComponentName service = getApplicationContext().startService(new Intent().setComponent(comp));
 
-            if (null == service) {
-                // something really wrong here
-                Toast.makeText(this, R.string.localiz_could_not_start, Toast.LENGTH_SHORT).show();
-                Log.e(TAG, "Could not start localization service " + comp.toString());
+                if (null == service) {
+                    // something really wrong here
+                    Toast.makeText(this, R.string.localiz_could_not_start, Toast.LENGTH_SHORT).show();
+                    Log.e(TAG, "Could not start localization service " + comp.toString());
+                }
             }
-        }
-        else
+            else
+            {
+                Toast.makeText(this, R.string.localiz_run, Toast.LENGTH_SHORT).show();
+            }
+        } else
         {
-            Toast.makeText(this, R.string.localiz_run, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Set device identifier", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "Device identifier is not setted");
         }
-
     }
 
     /**
