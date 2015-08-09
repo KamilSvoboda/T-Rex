@@ -26,7 +26,6 @@ import java.text.SimpleDateFormat;
 
 public class MainScreen extends ActionBarActivity {
 
-    /*TODO: https://gist.github.com/blackcj/20efe2ac885c7297a676 */
     private static final String TAG = "MainScreen";
 
     private String mDeviceId;
@@ -39,7 +38,7 @@ public class MainScreen extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main_screen);
 
-        ToggleButton toggle = (ToggleButton) findViewById(R.id.toggle_start);
+        final ToggleButton toggle = (ToggleButton) findViewById(R.id.toggle_start);
 
         //sets toggle state before listener is attached
         toggle.setChecked(getIntent().getBooleanExtra(Constants.EXTRAS_LOCALIZATION_IS_RUNNING, false));
@@ -47,7 +46,10 @@ public class MainScreen extends ActionBarActivity {
         toggle.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (isChecked) {
-                    startSending();
+                    if (!startSending()) //cancel toggle switch when service' start is not successful
+                    {
+                        toggle.setChecked(false);
+                    }
                 } else {
                     stopSending();
                 }
@@ -90,7 +92,7 @@ public class MainScreen extends ActionBarActivity {
     /**
      * Start localizing and sending
      */
-    public void startSending() {
+    public Boolean startSending() {
         //Check screen on/off settings
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         mDeviceId = sharedPref.getString("pref_id","");
@@ -117,7 +119,9 @@ public class MainScreen extends ActionBarActivity {
                     // something really wrong here
                     Toast.makeText(this, R.string.localiz_could_not_start, Toast.LENGTH_SHORT).show();
                     Log.e(TAG, "Could not start localization service " + comp.toString());
-                }
+                    return false;
+                } else
+                    return true;
             }
             else
             {
@@ -128,6 +132,7 @@ public class MainScreen extends ActionBarActivity {
             Toast.makeText(this, "Set device identifier", Toast.LENGTH_SHORT).show();
             Log.e(TAG, "Device identifier is not setted");
         }
+        return false;
     }
 
     /**
@@ -210,7 +215,7 @@ public class MainScreen extends ActionBarActivity {
             }
         }
     }
-    
+
     private void UpdateGUI(Location location, String serverResponse)
     {
         if (location != null) {
