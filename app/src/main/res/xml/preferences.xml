@@ -8,6 +8,13 @@
             android:defaultValue="@string/pref_targetUrl_def_value"/>
     </PreferenceCategory>
     <PreferenceCategory android:key="pref_location_category" android:title="@string/pref_location_category">
+        <ListPreference
+            android:key="pref_strategy"
+            android:entries="@array/strategyListOptions"
+            android:entryValues="@array/strategyListValues"
+            android:defaultValue="PRIORITY_HIGH_ACCURACY"
+            android:summary="@string/pref_strategy_sum"
+            android:title="@string/pref_strategy" />
         <EditTextPreference
             android:inputType="number"
             android:defaultValue="30"
@@ -24,13 +31,6 @@
             android:defaultValue="10"
             android:title="@string/pref_max_interval"
             android:summary="@string/pref_max_interval_sum"/>
-        <ListPreference
-            android:key="pref_strategy"
-            android:entries="@array/strategyListOptions"
-            android:entryValues="@array/strategyListValues"
-            android:defaultValue="PRIORITY_HIGH_ACCURACY"
-            android:summary="@string/pref_strategy_sum"
-            android:title="@string/pref_strategy" />
     </PreferenceCategory>
     <PreferenceCategory android:key="pref_device_category" android:title="@string/pref_device">
         <EditTextPreference android:key="pref_id"

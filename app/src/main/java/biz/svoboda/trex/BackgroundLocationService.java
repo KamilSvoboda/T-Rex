@@ -67,7 +67,7 @@ public class BackgroundLocationService extends Service implements
     private String mListPrefs;
     private Integer mFrequency = 30;
     private Integer mMinDistance = 100;
-    private Integer mMaxInterval = 10;
+    private Integer mMaxInterval = 600;
 
     public class LocalBinder extends Binder {
         public BackgroundLocationService getServerInstance() {
@@ -231,9 +231,9 @@ public class BackgroundLocationService extends Service implements
 
                 //calculate minutes diff between last and current location
                 long diff = location.getTime() - mLastSendedLocation.getTime();
-                long diffMinutes = diff / (60 * 1000) % 60;
+                long diffSeconds = diff / 1000 % 60;
 
-                if ((diffMinutes >= mMaxInterval) || (mLastSendedLocation.distanceTo(location) >= mMinDistance))
+                if ((diffSeconds >= mMaxInterval) || (mLastSendedLocation.distanceTo(location) >= mMinDistance))
                     SendPosition(location);
 
             } catch (Exception e) {
