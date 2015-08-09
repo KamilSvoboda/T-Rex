@@ -85,8 +85,8 @@ public class BackgroundLocationService extends Service implements
         super.onCreate();
 
         SharedPreferences sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
-        mTargetServerURL = sharedPref.getString("pref_targetUrl","");
-        mDeviceIdentifier = sharedPref.getString("pref_id","");
+        mTargetServerURL = sharedPref.getString("pref_targetUrl", "");
+        mDeviceIdentifier = sharedPref.getString("pref_id", "");
         mListPrefs = sharedPref.getString("pref_strategy", "PRIORITY_BALANCED_POWER_ACCURACY");
         mFrequency = Integer.valueOf(sharedPref.getString("pref_frequency", String.valueOf(mFrequency)));
         mMinDistance = Integer.valueOf(sharedPref.getString("pref_min_dist", String.valueOf(mMinDistance)));
@@ -131,7 +131,7 @@ public class BackgroundLocationService extends Service implements
 
             startForeground(NOTIFICATION, mBuilder.build()); //spuštění služby s vyšší prioritou na popředí - http://developer.android.com/reference/android/app/Service.html
 
-            if(Constants.INFO) Log.i(TAG, "Localization Started");
+            if (Constants.INFO) Log.i(TAG, "Localization Started");
             Toast.makeText(this, R.string.localiz_started, Toast.LENGTH_SHORT).show();
         }
 
@@ -153,7 +153,7 @@ public class BackgroundLocationService extends Service implements
         }
         // Display the connection status
         Toast.makeText(this, R.string.localiz_stopped, Toast.LENGTH_SHORT).show();
-        if(Constants.INFO) Log.i(TAG, "Localization Stopped");
+        if (Constants.INFO) Log.i(TAG, "Localization Stopped");
         super.onDestroy();
     }
 
@@ -170,8 +170,7 @@ public class BackgroundLocationService extends Service implements
         mLocationRequest.setInterval(mFrequency * 1000);
         mLocationRequest.setFastestInterval(1000);
 
-        switch (mListPrefs)
-        {
+        switch (mListPrefs) {
             case "PRIORITY_HIGH_ACCURACY":
                 mLocationRequest.setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
                 break;
@@ -225,8 +224,7 @@ public class BackgroundLocationService extends Service implements
     private void processLocation(Location location) {
         if (location != null) {
             try {
-                if (mLastSendedLocation == null)
-                {
+                if (mLastSendedLocation == null) {
                     SendPosition(location);
                     return;
                 }
@@ -235,7 +233,7 @@ public class BackgroundLocationService extends Service implements
                 long diff = location.getTime() - mLastSendedLocation.getTime();
                 long diffMinutes = diff / (60 * 1000) % 60;
 
-                if ((diffMinutes >= mMaxInterval) || ( mLastSendedLocation.distanceTo(location) >= mMinDistance))
+                if ((diffMinutes >= mMaxInterval) || (mLastSendedLocation.distanceTo(location) >= mMinDistance))
                     SendPosition(location);
 
             } catch (Exception e) {
@@ -248,6 +246,7 @@ public class BackgroundLocationService extends Service implements
 
     /**
      * Send location to the server
+     *
      * @param location
      */
     private void SendPosition(Location location) {
@@ -260,23 +259,25 @@ public class BackgroundLocationService extends Service implements
             String speed = Float.toString(location.getSpeed());
             String bearing = Float.toString(location.getBearing());
 
+            mLastSendedLocation = location;
             new NetworkTask().execute(mTargetServerURL, mDeviceIdentifier, lastUpdateTime, lat, lon, alt, speed, bearing);
 
-            Intent localIntent =  new Intent(Constants.LOCATION_BROADCAST);
-            localIntent.putExtra(Constants.EXTRAS_POSITION_DATA, location);
-            localIntent.putExtra(Constants.EXTRAS_SERVER_RESPONSE, mServerResponse);
-
-            // Broadcasts the Intent to receivers in this app.
-            LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
-
-            mLastSendedLocation = location;
-
-            if(Constants.INFO) Log.i(TAG, "Position sent to server " + lat + ", " + lon);
-        } else
-        {
+            if (Constants.INFO) Log.i(TAG, "Position sent to server " + lat + ", " + lon);
+        } else {
             Toast.makeText(this, "Cannot connect to server: '" + mTargetServerURL + "'", Toast.LENGTH_LONG).show();
             Log.e(TAG, "Cannot connect to server: '" + mTargetServerURL + "'");
         }
+    }
+
+    /**
+     * Broadcasts the Intent to receivers in this app.
+     */
+    private void SendBroadcast() {
+        Intent localIntent = new Intent(Constants.LOCATION_BROADCAST);
+        localIntent.putExtra(Constants.EXTRAS_POSITION_DATA, mLastSendedLocation);
+        localIntent.putExtra(Constants.EXTRAS_SERVER_RESPONSE, mServerResponse);
+
+        LocalBroadcastManager.getInstance(this).sendBroadcast(localIntent);
     }
 
     /**
@@ -286,7 +287,7 @@ public class BackgroundLocationService extends Service implements
      */
     public boolean isNetworkOnline() {
         ConnectivityManager cm =
-                (ConnectivityManager)getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
+                (ConnectivityManager) getApplicationContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         return activeNetwork != null && activeNetwork.isConnectedOrConnecting();
@@ -328,26 +329,25 @@ public class BackgroundLocationService extends Service implements
 
                 if (responseCode == HttpsURLConnection.HTTP_OK) {
                     String line;
-                    BufferedReader br=new BufferedReader(new InputStreamReader(conn.getInputStream()));
-                    while ((line=br.readLine()) != null) {
-                        response+=line;
+                    BufferedReader br = new BufferedReader(new InputStreamReader(conn.getInputStream()));
+                    while ((line = br.readLine()) != null) {
+                        response += line;
                     }
-                }
-                else {
-                    throw new HttpException("HTTP response: " + responseCode);
+                } else {
+                    response = "HTTP response: " + responseCode;
                 }
             } catch (Exception e) {
-                Log.e(TAG, "Error during network connection:", e);
+                Log.e(TAG, "Network connection:", e);
                 e.printStackTrace();
-                return null;
+                response = e.getLocalizedMessage();
             }
             return response;
         }
 
-        private String getPostDataString(HashMap<String, String> params) throws UnsupportedEncodingException{
+        private String getPostDataString(HashMap<String, String> params) throws UnsupportedEncodingException {
             StringBuilder result = new StringBuilder();
             boolean first = true;
-            for(Map.Entry<String, String> entry : params.entrySet()){
+            for (Map.Entry<String, String> entry : params.entrySet()) {
                 if (first)
                     first = false;
                 else
@@ -359,13 +359,16 @@ public class BackgroundLocationService extends Service implements
             }
             return result.toString();
         }
+
         /**
          * Response processing
+         *
          * @param result
          */
         @Override
         protected void onPostExecute(String result) {
             mServerResponse = result;
+            SendBroadcast();
         }
     }
 }

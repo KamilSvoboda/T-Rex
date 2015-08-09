@@ -186,6 +186,31 @@ public class MainScreen extends ActionBarActivity {
         return false;
     }
 
+    /**
+     * This class uses the BroadcastReceiver framework to detect and handle new postition messages from
+     * the service
+     */
+    private class NewPositionReceiver extends BroadcastReceiver
+    {
+        // prevents instantiation by other packages.
+        private NewPositionReceiver(){}
+
+        /**
+         * This method is called by the system when a broadcast Intent is matched by this class'
+         * intent filters
+         * @param context
+         * @param intent
+         */
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            Location location = (Location)intent.getExtras().get(Constants.EXTRAS_POSITION_DATA);
+            String serverResponse = intent.getStringExtra(Constants.EXTRAS_SERVER_RESPONSE);
+            if (location != null || serverResponse != null) {
+                UpdateGUI(location,serverResponse);
+            }
+        }
+    }
+    
     private void UpdateGUI(Location location, String serverResponse)
     {
         if (location != null) {
@@ -221,33 +246,5 @@ public class MainScreen extends ActionBarActivity {
             httpRespText.setText(serverResponse);
         }
     }
-
-    /**
-     * This class uses the BroadcastReceiver framework to detect and handle new postition messages from
-     * the service
-     */
-    private class NewPositionReceiver extends BroadcastReceiver
-    {
-        private NewPositionReceiver()
-        {
-            // prevents instantiation by other packages.
-        }
-
-        /**
-         * This method is called by the system when a broadcast Intent is matched by this class'
-         * intent filters
-         * @param context
-         * @param intent
-         */
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            Location location = (Location)intent.getExtras().get(Constants.EXTRAS_POSITION_DATA);
-            String serverResponse = intent.getStringExtra(Constants.EXTRAS_SERVER_RESPONSE);
-            if (location != null || serverResponse != null) {
-                UpdateGUI(location,serverResponse);
-            }
-        }
-    }
-
 }
 
